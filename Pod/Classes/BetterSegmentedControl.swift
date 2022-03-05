@@ -65,7 +65,14 @@ import UIKit
     }
     
     /// The indicator view's inset. Defaults to `2.0`.
-    @IBInspectable public var indicatorViewInset: CGFloat = 2.0 {
+    @IBInspectable public var indicatorVerticalViewInset: CGFloat = 2.0 {
+        didSet {
+            updateCornerRadii()
+        }
+    }
+    
+    /// The indicator view's inset. Defaults to `2.0`.
+    @IBInspectable public var indicatorHorizontalViewInset: CGFloat = 2.0 {
         didSet {
             updateCornerRadii()
         }
@@ -120,10 +127,10 @@ import UIKit
             return a.height < b.height
         })?.height ?? 0.0
         
-        let singleSegmentWidth = totalInsetSize + max(maxSegmentIntrinsicContentSizeWidth, Constants.minimumSegmentIntrinsicContentSizeWidth) + segmentPadding
+        let singleSegmentWidth = totalHorizontalInsetSize + max(maxSegmentIntrinsicContentSizeWidth, Constants.minimumSegmentIntrinsicContentSizeWidth) + segmentPadding
         
         let width = ceil(CGFloat(segments.count) * singleSegmentWidth)
-        let height = ceil(max(maxSegmentIntrinsicContentSizeHeight + totalInsetSize, Constants.minimumIntrinsicContentSizeHeight))
+        let height = ceil(max(maxSegmentIntrinsicContentSizeHeight + totalVerticalInsetSize, Constants.minimumIntrinsicContentSizeHeight))
         
         return .init(width: width, height: height)
     }
@@ -156,7 +163,9 @@ import UIKit
     }
     private var lastIndex: Int { segments.endIndex - 1 }
     
-    private var totalInsetSize: CGFloat { indicatorViewInset * 2.0 }
+    private var totalVerticalInsetSize: CGFloat { indicatorVerticalViewInset * 2.0 }
+    
+    private var totalHorizontalInsetSize: CGFloat { indicatorHorizontalViewInset * 2.0 }
     
     private var isLayoutDirectionRightToLeft: Bool {
         let layoutDirection = UIView.userInterfaceLayoutDirection(for: semanticContentAttribute)
@@ -319,8 +328,10 @@ import UIKit
             switch option {
             case let .indicatorViewBackgroundColor(value):
                 indicatorViewBackgroundColor = value
-            case let .indicatorViewInset(value):
-                indicatorViewInset = value
+            case let .indicatorVerticalViewInset(value):
+                indicatorVerticalViewInset = value
+            case let .indicatorHorizontalViewInset(value):
+                indicatorHorizontalViewInset = value
             case let .indicatorViewBorderWidth(value):
                 indicatorViewBorderWidth = value
             case let .indicatorViewBorderColor(value):
@@ -434,7 +445,7 @@ import UIKit
     }
     
     private func updateCornerRadii() {
-        indicatorView.cornerRadius = cornerRadius - indicatorViewInset
+        indicatorView.cornerRadius = cornerRadius - indicatorVerticalViewInset
         allSegmentViews.forEach { $0.layer.cornerRadius = indicatorView.cornerRadius }
     }
     
@@ -447,13 +458,23 @@ import UIKit
     }
     
     private func frameForElement(atIndex index: Int) -> CGRect {
-        let elementWidth = (width - totalInsetSize) / CGFloat(normalSegmentViewCount)
-        let x = CGFloat(isLayoutDirectionRightToLeft ? lastIndex - index : index) * elementWidth
+        let elementWidth = (width - totalHorizontalInsetSize) / CGFloat(normalSegmentViewCount)
         
-        return CGRect(x: x + indicatorViewInset,
-                      y: indicatorViewInset,
-                      width: elementWidth,
-                      height: height - totalInsetSize)
+        var totalWidth: CGFloat = 0
+        
+        if index > 0 {
+            for currentIndex in 0 ... index - 1 {
+                totalWidth += segments[currentIndex].intrinsicContentSize?.width ?? 0
+            }
+        }
+       
+        
+        let x = totalWidth
+        
+        return CGRect(x: x + indicatorHorizontalViewInset,
+                      y: indicatorVerticalViewInset,
+                      width: segments[index].intrinsicContentSize?.width ?? 0,
+                      height: height - totalVerticalInsetSize)
     }
     
     private func resetIndex() {
@@ -483,7 +504,7 @@ import UIKit
         case .changed:
             var frame = initialIndicatorViewFrame!
             frame.origin.x += gestureRecognizer.translation(in: self).x
-            frame.origin.x = max(min(frame.origin.x, bounds.width - indicatorViewInset - frame.width), indicatorViewInset)
+            frame.origin.x = max(min(frame.origin.x, bounds.width - indicatorHorizontalViewInset - frame.width), indicatorHorizontalViewInset)
             indicatorView.frame = frame
         case .ended, .failed, .cancelled:
             setIndex(closestIndex(toPoint: indicatorView.center), shouldSendValueChangedEvent: true)
@@ -503,3 +524,4 @@ extension BetterSegmentedControl: UIGestureRecognizerDelegate {
 }
 
 #endif
+

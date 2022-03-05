@@ -14,7 +14,8 @@ public extension BetterSegmentedControl {
     enum Option {
         /* Selected segment */
         case indicatorViewBackgroundColor(UIColor)
-        case indicatorViewInset(CGFloat)
+        case indicatorVerticalViewInset(CGFloat)
+        case indicatorHorizontalViewInset(CGFloat)
         case indicatorViewBorderWidth(CGFloat)
         case indicatorViewBorderColor(UIColor)
         
